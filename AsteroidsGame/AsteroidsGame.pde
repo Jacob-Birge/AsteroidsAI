@@ -1,7 +1,14 @@
 Player humanPlayer;//the player which the user (you) controls
 Population pop; 
-int speed = 100;
-float globalMutationRate = 0.1;
+int speed = 1000;
+int numPlayers = 400;
+int minNumPlayers = 50;
+int playerDecayRate = 2;
+float globalMutationRate = 0.8;
+float minMutationRate = 0.1;
+int constGensTillDecay = 4;
+int decayRate = 2;
+int numGensTillDecay = constGensTillDecay;
 PFont font;
 //boolean Values 
 boolean showBest = true;//true if only show the best of the previous generation
@@ -11,7 +18,7 @@ void setup() {//on startup
   size(1200, 675);
 
   humanPlayer = new Player();
-  pop = new Population(200);// create new population of size 200
+  pop = new Population(numPlayers);// create new population of size 200
   frameRate(speed);
   font = loadFont("AgencyFB-Reg-48.vlw");
 }
@@ -19,6 +26,7 @@ void setup() {//on startup
 
 void draw() {
   background(0); //deep space background
+  int numAlive = 0;
   if (humanPlaying) {//if the user is controling the ship[
     if (!humanPlayer.dead) {//if the player isnt dead then move and show the player based on input
       humanPlayer.update();
@@ -33,20 +41,42 @@ void draw() {
       pop.bestPlayer.think();
       pop.bestPlayer.update();
       pop.bestPlayer.show();
-    } else {//once dead
+    } 
+    else {//once dead
       runBest = false;//stop replaying it
       pop.bestPlayer = pop.bestPlayer.cloneForReplay();//reset the best player so it can play again
     }
-  } else {//if just evolving normally
-    if (!pop.done()) {//if any players are alive then update them
+  } 
+  else {//if just evolving normally
+    if ((numAlive = pop.getNumAlive()) > 0) {//if any players are alive then update them
       pop.updateAlive();
     } else {//all dead
+      println("Score: " + pop.players[0].score + " Gen: " + pop.gen + " Mut: " + globalMutationRate + " Pop: " + numPlayers);
+      if (numGensTillDecay <= 0){
+        if (globalMutationRate / decayRate > minMutationRate){
+          numGensTillDecay = constGensTillDecay;
+          globalMutationRate /= decayRate;
+        }
+        else if (globalMutationRate > minMutationRate){
+          globalMutationRate = minMutationRate;
+        }
+        if (numPlayers / playerDecayRate > minNumPlayers){
+          numGensTillDecay = constGensTillDecay;
+          numPlayers /= playerDecayRate;
+        }
+        else if (numPlayers > minNumPlayers){
+          numPlayers = minNumPlayers;
+        }
+      }
+      else{
+        numGensTillDecay -= 1;
+      }
       //genetic algorithm 
       pop.calculateFitness(); 
-      pop.naturalSelection();
+      pop.naturalSelection(numPlayers);
     }
   }
-  showScore();//display the score
+  showScore(numAlive);//display the score
 }
 //------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -127,7 +157,7 @@ boolean isOut(PVector pos) {
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 //shows the score and the generation on the screen
-void showScore() {
+void showScore(int numAlive) {
   if (humanPlaying) {
     textFont(font);
     fill(255);
@@ -146,6 +176,7 @@ void showScore() {
         fill(255);
         textAlign(LEFT);
         text("Score: " + pop.players[0].score, 80, 60);
+        text("Pop: " + numAlive, (80+width-200)/2, 60);
         text("Gen: " + pop.gen, width-200, 60);
       }
     }

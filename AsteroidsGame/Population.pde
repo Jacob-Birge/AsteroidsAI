@@ -52,28 +52,29 @@ class Population {
 
   //------------------------------------------------------------------------------------------------------------------------------------------
   //returns true if all the players are dead      sad
-  boolean done() {
+  int getNumAlive() {
+    int numAlive = 0;
     for (int i = 0; i< players.length; i++) {
       if (!players[i].dead) {
-        return false;
+        numAlive += 1;
       }
     }
-    return true;
+    return numAlive;
   }
   //------------------------------------------------------------------------------------------------------------------------------------------
   //creates the next generation of players by natural selection
 
-  void naturalSelection() {
+  void naturalSelection(int numPlayers) {
 
 
-    Player[] newPlayers = new Player[players.length];//Create new players array for the next generation
+    Player[] newPlayers = new Player[numPlayers];//Create new players array for the next generation
 
     setBestPlayer();//set which player is the best
 
     newPlayers[0] = players[bestPlayerNo].cloneForReplay();//add the best player of this generation to the next generation without mutation
-    for (int i = 1; i<players.length; i++) {
+    for (int i = 1; i<numPlayers; i++) {
       //for each remaining spot in the next generation
-      if (i<players.length/2) {
+      if (i<numPlayers/2) {
         newPlayers[i] = selectPlayer().clone();//select a random player(based on fitness) and clone it
       } else {
         newPlayers[i] = selectPlayer().crossover(selectPlayer());
